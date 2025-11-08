@@ -1,0 +1,71 @@
+const express = require("express");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const cors = require("cors");
+const dotenv = require("dotenv"); // ✅ must install: npm install dotenv
+dotenv.config(); // ✅ loads .env file variables into process.env
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+const port = process.env.PORT || 3000;
+
+// ✅ Use local MongoDB URI from .env file
+const uri = process.env.MONGO_URI;
+
+// ✅ Create a MongoClient instance
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+async function run() {
+  try {
+    // ✅ Connect to MongoDB
+    await client.connect();
+    console.log("✅ Connected to MongoDB successfully");
+    await client.db("admin").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
+
+    const database = client.db("petMartDB");
+    const usersCollection = database.collection("pets");
+
+    app.get("/", (req, res) => {
+      res.send("This is from /");
+    });
+
+    // 📦 GET all users
+    app.get("/users", async (req, res) => {
+      try {
+        const users = await usersCollection.find().toArray();
+        res.json({ data: users });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch users", error });
+      }
+    });
+
+    // ➕ POST a new user/book
+    app.post("/users", async (req, res) => {
+      try {
+        const newUser = req.body;
+        const result = await usersCollection.insertOne(newUser);
+        res.json({ data: result });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to insert user", error });
+      }
+    });
+  } finally {
+    //await client.close()
+  }
+}
+
+run().catch(console.dir);
+
+// ✅ Start server
+app.listen(port, () =>
+  console.log(`🚀 Server running on http://localhost:${3000}`)
+);
