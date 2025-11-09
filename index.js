@@ -97,6 +97,15 @@ async function run() {
       }
     });
 
+    app.get("/search", async (req, res) => {
+      const search_text = req.query.search;
+      const cursor = listingsCollection.find({
+        name: { $regex: search_text, $options: "i" },
+      });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.post("/listings", verifyFirebaseToken, async (req, res) => {
       try {
         const newListing = req.body;
