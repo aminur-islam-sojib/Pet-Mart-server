@@ -97,6 +97,20 @@ async function run() {
       }
     });
 
+    app.get("/category-filtered-product/:categoryName", async (req, res) => {
+      const queryParams = req.params.categoryName;
+      console.log(queryParams);
+      if (queryParams == "All") {
+        const cursor = listingsCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+      } else {
+        const cursor = listingsCollection.find({ category: queryParams });
+        const result = await cursor.toArray();
+        res.send(result);
+      }
+    });
+
     app.get("/search", async (req, res) => {
       const search_text = req.query.search;
       const cursor = listingsCollection.find({
