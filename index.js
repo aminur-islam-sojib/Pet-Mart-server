@@ -32,7 +32,8 @@ async function run() {
     );
 
     const database = client.db("petMartDB");
-    const usersCollection = database.collection("pets");
+    const usersCollection = database.collection("users");
+    const listingsCollection = database.collection("listings");
 
     app.get("/", (req, res) => {
       res.send("This is from /");
@@ -54,6 +55,16 @@ async function run() {
         const newUser = req.body;
         const result = await usersCollection.insertOne(newUser);
         res.json({ data: result });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to insert user", error });
+      }
+    });
+
+    app.post("/listings", async (req, res) => {
+      try {
+        const newListing = req.body;
+        const listings = await listingsCollection.insertOne(newListing);
+        res.send(listings);
       } catch (error) {
         res.status(500).json({ message: "Failed to insert user", error });
       }
