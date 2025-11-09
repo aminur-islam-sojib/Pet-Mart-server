@@ -8,6 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 3000;
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./pet-mart-firebase-admin-skd.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 // ✅ Use local MongoDB URI from .env file
 const uri = process.env.MONGO_URI;
@@ -20,6 +27,26 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const verifyFirebaseToken = async (req, res, next) => {
+  const headerToken = req.headers.authorization;
+
+  console.log(headerToken);
+
+  if (!headerToken)
+    return error.status(401).status({ message: "unauthorized access" });
+
+  const token = headerToken.split(" ")[1];
+  console.log(token);
+
+  try {
+    const decode = await admin.auth().verifyIdToken(token);
+    req.user = decode;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+};
 
 async function run() {
   try {
@@ -60,7 +87,7 @@ async function run() {
       }
     });
 
-    app.post("/listings", async (req, res) => {
+    app.post("/listings", verifyFirebaseToken, async (req, res) => {
       try {
         const newListing = req.body;
         const listings = await listingsCollection.insertOne(newListing);
