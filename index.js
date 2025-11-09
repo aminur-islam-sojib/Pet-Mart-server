@@ -87,6 +87,16 @@ async function run() {
       }
     });
 
+    app.get("/listings", async (req, res) => {
+      try {
+        const cursor = listingsCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to get data", error });
+      }
+    });
+
     app.post("/listings", verifyFirebaseToken, async (req, res) => {
       try {
         const newListing = req.body;
