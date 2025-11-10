@@ -114,6 +114,15 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/myListings/:id", verifyFirebaseToken, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const result = await listingsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
+    });
+
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
       const queryParams = req.params.categoryName;
       console.log(queryParams);
