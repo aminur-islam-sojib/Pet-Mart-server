@@ -42,6 +42,7 @@ const verifyFirebaseToken = async (req, res, next) => {
   try {
     const decode = await admin.auth().verifyIdToken(token);
     req.user = decode;
+    console.log(req.user);
     next();
   } catch (error) {
     return res.status(403).json({ message: "Invalid or expired token" });
@@ -61,6 +62,7 @@ async function run() {
     const database = client.db("petMartDB");
     const usersCollection = database.collection("users");
     const listingsCollection = database.collection("listings");
+    const ordersCollection = database.collection("orders");
 
     app.get("/", (req, res) => {
       res.send("This is from /");
@@ -97,7 +99,7 @@ async function run() {
       }
     });
 
-    app.get("/listing/:id", async (req, res) => {
+    app.get("/listing/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const result = await listingsCollection.findOne({
         _id: new ObjectId(id),
@@ -135,6 +137,16 @@ async function run() {
         res.send(listings);
       } catch (error) {
         res.status(500).json({ message: "Failed to insert user", error });
+      }
+    });
+
+    app.post("/orders", verifyFirebaseToken, async (req, res) => {
+      try {
+        const newOrder = req.body;
+        const result = await ordersCollection.insertOne(newOrder);
+        res.send(result);
+      } catch (error) {
+        res.status(500).json({ message: "Failed Insert Order", error });
       }
     });
   } finally {
