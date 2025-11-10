@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const dotenv = require("dotenv"); // ✅ must install: npm install dotenv
 dotenv.config(); // ✅ loads .env file variables into process.env
@@ -95,6 +95,14 @@ async function run() {
       } catch (error) {
         res.status(500).json({ message: "Failed to get data", error });
       }
+    });
+
+    app.get("/listing/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await listingsCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
     });
 
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
