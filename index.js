@@ -107,6 +107,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/myListings/:email", verifyFirebaseToken, async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const result = await listingsCollection.find({ email: email }).toArray();
+      res.send(result);
+    });
+
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
       const queryParams = req.params.categoryName;
       console.log(queryParams);
