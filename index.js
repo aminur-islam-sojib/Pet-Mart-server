@@ -158,7 +158,7 @@ async function run() {
       const email = req.params.email;
       if (token_email !== email)
         return res.status(401).send({ message: "Forbidden Access" });
-      const cursor = ordersCollection.find({ email: email });
+      const cursor = ordersCollection.find({ buyerEmail: email });
       const result = await cursor.toArray();
       res.send(result);
     });
