@@ -31,18 +31,12 @@ const client = new MongoClient(uri, {
 const verifyFirebaseToken = async (req, res, next) => {
   const headerToken = req.headers.authorization;
 
-  console.log(headerToken);
-
   if (!headerToken)
     return error.status(401).status({ message: "unauthorized access" });
-
   const token = headerToken.split(" ")[1];
-  console.log(token);
-
   try {
     const decode = await admin.auth().verifyIdToken(token);
     req.user = decode;
-    console.log(req.user);
     next();
   } catch (error) {
     return res.status(403).json({ message: "Invalid or expired token" });
@@ -164,6 +158,18 @@ async function run() {
       } catch (error) {
         res.status(500).json({ message: "Failed Insert Order", error });
       }
+    });
+
+    app.patch("/updateItem/:id", verifyFirebaseToken, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const updatedData = req.body;
+
+      const result = await listingsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData }
+      );
+      res.send(result);
     });
   } finally {
     //await client.close()
