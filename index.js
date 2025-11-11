@@ -72,7 +72,7 @@ async function run() {
       }
     });
 
-    // ➕ POST a new user/book
+    // POST a new user/book
     app.post("/users", async (req, res) => {
       try {
         const newUser = req.body;
@@ -106,14 +106,12 @@ async function run() {
       const email = req.params.email;
       if (token_email !== email)
         return res.status(403).send({ message: "Forbidden Access" });
-      console.log(email);
       const result = await listingsCollection.find({ email: email }).toArray();
       res.send(result);
     });
 
     app.delete("/myListings/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const result = await listingsCollection.deleteOne({
         _id: new ObjectId(id),
       });
@@ -122,7 +120,7 @@ async function run() {
 
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
       const queryParams = req.params.categoryName;
-      console.log(queryParams);
+
       if (queryParams == "All") {
         const cursor = listingsCollection.find();
         const result = await cursor.toArray();
@@ -175,9 +173,7 @@ async function run() {
 
     app.patch("/updateItem/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const updatedData = req.body;
-
       const result = await listingsCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: updatedData }
