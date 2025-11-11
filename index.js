@@ -102,7 +102,10 @@ async function run() {
     });
 
     app.get("/myListings/:email", verifyFirebaseToken, async (req, res) => {
+      const token_email = req.user.email;
       const email = req.params.email;
+      if (token_email !== email)
+        return res.status(403).send({ message: "Forbidden Access" });
       console.log(email);
       const result = await listingsCollection.find({ email: email }).toArray();
       res.send(result);
@@ -148,6 +151,16 @@ async function run() {
       } catch (error) {
         res.status(500).json({ message: "Failed to insert user", error });
       }
+    });
+
+    app.get("/myOrders/:email", verifyFirebaseToken, async (req, res) => {
+      const token_email = req.user.email;
+      const email = req.params.email;
+      if (token_email !== email)
+        return res.status(401).send({ message: "Forbidden Access" });
+      const cursor = ordersCollection.find({ email: email });
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
     app.post("/orders", verifyFirebaseToken, async (req, res) => {
