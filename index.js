@@ -102,6 +102,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/recent-products", async (req, res) => {
+      const result = await listingsCollection
+        .find()
+        .limit(6)
+        .sort({ date: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+
     app.get("/myListings/:email", verifyFirebaseToken, async (req, res) => {
       const token_email = req.user.email;
       const email = req.params.email;
