@@ -57,6 +57,7 @@ async function run() {
     const usersCollection = database.collection("users");
     const listingsCollection = database.collection("listings");
     const ordersCollection = database.collection("orders");
+    const subscriptionCollection = database.collection("subscription");
 
     app.get("/", (req, res) => {
       res.send("This is from /");
@@ -146,6 +147,16 @@ async function run() {
         const newListing = req.body;
         const listings = await listingsCollection.insertOne(newListing);
         res.send(listings);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to insert user", error });
+      }
+    });
+
+    app.post("/subscription", async (req, res) => {
+      try {
+        const newEmail = req.body;
+        const result = await subscriptionCollection.insertOne(newEmail);
+        res.send(result);
       } catch (error) {
         res.status(500).json({ message: "Failed to insert user", error });
       }
