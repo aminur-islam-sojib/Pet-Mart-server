@@ -10,12 +10,15 @@ app.use(express.json());
 const port = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 
-const serviceAccount = require("./pet-mart-firebase-admin-skd.json");
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
+  "utf8"
+);
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-
+1;
 // ✅ Use local MongoDB URI from .env file
 const uri = process.env.MONGO_URI;
 
@@ -47,11 +50,11 @@ async function run() {
   try {
     // ✅ Connect to MongoDB
     await client.connect();
-    console.log("✅ Connected to MongoDB successfully");
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // console.log("✅ Connected to MongoDB successfully");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
 
     const database = client.db("petMartDB");
     const usersCollection = database.collection("users");
