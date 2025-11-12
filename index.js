@@ -132,12 +132,12 @@ async function run() {
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
       const queryParams = req.params.categoryName;
 
-      if (queryParams == "All") {
+      if (queryParams == "all") {
         const cursor = listingsCollection.find();
         const result = await cursor.toArray();
         res.send(result);
       } else {
-        const cursor = listingsCollection.find({ category: queryParams });
+        const cursor = listingsCollection.find({ categorySlug: queryParams });
         const result = await cursor.toArray();
         res.send(result);
       }
