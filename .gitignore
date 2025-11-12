@@ -1,3 +1,4 @@
 node_modules
 .env
 pet-mart-firebase-admin-skd.json
+.vercel

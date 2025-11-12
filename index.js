@@ -1,15 +1,16 @@
+// ✅ Imports
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
-const dotenv = require("dotenv"); // ✅ must install: npm install dotenv
-dotenv.config(); // ✅ loads .env file variables into process.env
+const admin = require("firebase-admin");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-const port = process.env.PORT || 3000;
-const admin = require("firebase-admin");
 
+// ✅ Remove dotenv.config() (Vercel injects env vars automatically)
+
+// ✅ Firebase Admin setup
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
   "utf8"
 );
@@ -18,11 +19,9 @@ const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-1;
-// ✅ Use local MongoDB URI from .env file
-const uri = process.env.MONGO_URI;
 
-// ✅ Create a MongoClient instance
+// ✅ MongoDB Setup
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -31,11 +30,12 @@ const client = new MongoClient(uri, {
   },
 });
 
+// ✅ Middleware to verify Firebase token
 const verifyFirebaseToken = async (req, res, next) => {
   const headerToken = req.headers.authorization;
-
   if (!headerToken)
-    return error.status(401).status({ message: "unauthorized access" });
+    return res.status(401).json({ message: "Unauthorized access" });
+
   const token = headerToken.split(" ")[1];
   try {
     const decode = await admin.auth().verifyIdToken(token);
@@ -46,27 +46,21 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
+// ✅ Main async function
 async function run() {
   try {
-    // ✅ Connect to MongoDB
     await client.connect();
-    // console.log("✅ Connected to MongoDB successfully");
-    // await client.db("admin").command({ ping: 1 });
-    // console.log(
-    //   "Pinged your deployment. You successfully connected to MongoDB!"
-    // );
-
     const database = client.db("petMartDB");
     const usersCollection = database.collection("users");
     const listingsCollection = database.collection("listings");
     const ordersCollection = database.collection("orders");
     const subscriptionCollection = database.collection("subscription");
 
-    app.get("/", (req, res) => {
-      res.send("This is from /");
-    });
+    // ✅ All routes below
+    app.get("/", (req, res) =>
+      res.send("✅ Paw Mart backend running on Vercel")
+    );
 
-    // 📦 GET all users
     app.get("/users", async (req, res) => {
       try {
         const users = await usersCollection.find().toArray();
@@ -76,7 +70,6 @@ async function run() {
       }
     });
 
-    // POST a new user/book
     app.post("/users", async (req, res) => {
       try {
         const newUser = req.body;
@@ -89,8 +82,7 @@ async function run() {
 
     app.get("/listings", async (req, res) => {
       try {
-        const cursor = listingsCollection.find();
-        const result = await cursor.toArray();
+        const result = await listingsCollection.find().toArray();
         res.send(result);
       } catch (error) {
         res.status(500).json({ message: "Failed to get data", error });
@@ -111,7 +103,6 @@ async function run() {
         .limit(6)
         .sort({ date: -1 })
         .toArray();
-
       res.send(result);
     });
 
@@ -120,7 +111,7 @@ async function run() {
       const email = req.params.email;
       if (token_email !== email)
         return res.status(403).send({ message: "Forbidden Access" });
-      const result = await listingsCollection.find({ email: email }).toArray();
+      const result = await listingsCollection.find({ email }).toArray();
       res.send(result);
     });
 
@@ -134,16 +125,12 @@ async function run() {
 
     app.get("/category-filtered-product/:categoryName", async (req, res) => {
       const queryParams = req.params.categoryName;
-
-      if (queryParams == "all") {
-        const cursor = listingsCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
-      } else {
-        const cursor = listingsCollection.find({ categorySlug: queryParams });
-        const result = await cursor.toArray();
-        res.send(result);
-      }
+      const cursor =
+        queryParams === "all"
+          ? listingsCollection.find()
+          : listingsCollection.find({ categorySlug: queryParams });
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
     app.get("/search", async (req, res) => {
@@ -204,14 +191,12 @@ async function run() {
       );
       res.send(result);
     });
-  } finally {
-    //await client.close()
+  } catch (err) {
+    console.error("❌ Server error:", err.message);
   }
 }
 
 run().catch(console.dir);
 
-// ✅ Start server
-app.listen(port, () =>
-  console.log(`🚀 Server running on http://localhost:${3000}`)
-);
+// ✅ Vercel expects you to export the app instead of listening
+module.exports = app; // <-- this line replaces app.listen()
