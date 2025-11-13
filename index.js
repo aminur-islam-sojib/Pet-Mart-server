@@ -75,7 +75,7 @@ async function run() {
         "MONGO_URI not provided — skipping DB connection. Database routes may fail at runtime."
       );
     } else {
-      await client.connect();
+      // await client.connect();
       console.log("Connected to MongoDB");
     }
     const database = client.db("petMartDB");
