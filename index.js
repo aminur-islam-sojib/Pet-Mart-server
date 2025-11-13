@@ -10,15 +10,28 @@ app.use(express.json());
 
 // ✅ Remove dotenv.config() (Vercel injects env vars automatically)
 
-// ✅ Firebase Admin setup
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
-  "utf8"
-);
-const serviceAccount = JSON.parse(decoded);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+// ---- Guarded Firebase Admin setup ----
+let adminInitialized = false;
+if (process.env.FB_SERVICE_KEY) {
+  try {
+    const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
+      "utf8"
+    );
+    const serviceAccount = JSON.parse(decoded);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    adminInitialized = true;
+    console.log("Firebase admin initialized");
+  } catch (err) {
+    console.error("Failed to initialize Firebase admin:", err.message);
+    // don't throw — keep server running and return 503 for protected routes
+  }
+} else {
+  console.warn(
+    "FB_SERVICE_KEY env var not provided — Firebase admin not initialized"
+  );
+}
 
 // ✅ MongoDB Setup
 const uri = process.env.MONGO_URI;
@@ -32,6 +45,12 @@ const client = new MongoClient(uri, {
 
 // ✅ Middleware to verify Firebase token
 const verifyFirebaseToken = async (req, res, next) => {
+  if (!adminInitialized) {
+    return res
+      .status(503)
+      .json({ message: "Authentication service not initialized" });
+  }
+
   const headerToken = req.headers.authorization;
   if (!headerToken)
     return res.status(401).json({ message: "Unauthorized access" });
@@ -46,10 +65,19 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
+app.get("/", (req, res) => res.send("Paw Mart backend — OK"));
+
 // ✅ Main async function
 async function run() {
   try {
-    await client.connect();
+    if (!uri) {
+      console.warn(
+        "MONGO_URI not provided — skipping DB connection. Database routes may fail at runtime."
+      );
+    } else {
+      await client.connect();
+      console.log("Connected to MongoDB");
+    }
     const database = client.db("petMartDB");
     const usersCollection = database.collection("users");
     const listingsCollection = database.collection("listings");
@@ -98,12 +126,18 @@ async function run() {
     });
 
     app.get("/recent-products", async (req, res) => {
-      const result = await listingsCollection
-        .find()
-        .limit(6)
-        .sort({ date: -1 })
-        .toArray();
-      res.send(result);
+      try {
+        const result = await listingsCollection
+          .find()
+          .sort({ _id: -1 })
+          .limit(6)
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Failed to fetch recent products", error });
+      }
     });
 
     app.get("/myListings/:email", verifyFirebaseToken, async (req, res) => {
